@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAShop — Upload Image</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .wrap { max-width: 600px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<header id="header"></header>
+<main>
+  <div class="wrap">
+    <h1>Upload Image</h1>
+    <p class="subtitle">Lab07: DigitalOcean Spaces (S3) — зураг хадгалах</p>
+
+    <div class="flow">
+      <span class="fn fn-client">Frontend</span>
+      <span class="fa">→</span>
+      <span class="fn fn-gateway">Gateway</span>
+      <span class="fa">→</span>
+      <span class="fn fn-service">File Manager</span>
+      <span class="fa">→</span>
+      <span class="fn fn-soap">SOAP Auth</span>
+      <span class="fa">→</span>
+      <span class="fn fn-service">DO Spaces</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Зураг Upload <span class="badge badge-rest">REST POST</span></div>
+
+      <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept="image/*" onchange="previewFile(event)">
+        <div class="upload-icon">📤</div>
+        <div class="upload-text">Зураг сонгохын тулд дарна уу<br><small>PNG, JPG, WEBP — max 10MB</small></div>
+      </div>
+
+      <img id="previewImg" class="preview-img" alt="preview">
+
+      <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()" style="width:100%;justify-content:center">
+        <span id="uploadSpin" class="spin" style="display:none"></span>
+        📤 DO Spaces-д Upload
+      </button>
+
+      <div id="upload-alert" class="alert"></div>
+
+      <div id="result-section" style="display:none;margin-top:1rem">
+        <div class="field">
+          <label>DO Spaces URL</label>
+          <div class="url-result" id="url-result"></div>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="copyUrl()">📋 URL Copy</button>
+          <a href="add-product.html" class="btn btn-success" style="margin-top:0;text-decoration:none">➕ Барааны зураг болгох</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/app.js"></script>
+<script>
+  renderHeader('files');
+
+  function previewFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = document.getElementById('previewImg');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadFile() {
+    if (!requireAuth()) return;
+
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files[0]) {
+      return showAlert('upload-alert', 'error', 'Зураг сонгоно уу');
+    }
+
+    document.getElementById('uploadSpin').style.display = 'inline-block';
+    document.getElementById('uploadBtn').disabled = true;
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    try {
+      const res = await fetch(`${GATEWAY}/api/files/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('url-result').textContent = data.url;
+        document.getElementById('result-section').style.display = 'block';
+        localStorage.setItem('last_upload_url', data.url);
+        showAlert('upload-alert', 'success', '✅ DO Spaces-д амжилттай хадгалагдлаа!');
+      } else if (res.status === 403) {
+        showAlert('upload-alert', 'error', '❌ SELLER эрхтэй хэрэглэгч л upload хийж болно');
+      } else {
+        showAlert('upload-alert', 'error', '❌ Upload амжилтгүй: ' + res.status);
+      }
+    } catch(e) {
+      showAlert('upload-alert', 'error', 'Gateway error: ' + e.message);
+    }
+
+    document.getElementById('uploadSpin').style.display = 'none';
+    document.getElementById('uploadBtn').disabled = false;
+  }
+
+  function copyUrl() {
+    const url = document.getElementById('url-result').textContent;
+    navigator.clipboard.writeText(url)
+      .then(() => showAlert('upload-alert', 'success', '✅ URL clipboard-д хуулагдлаа'))
+      .catch(() => alert(url));
+  }
+</script>
+</body>
+</html>

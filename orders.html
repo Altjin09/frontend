@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAShop — Orders</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+</style>
+</head>
+<body>
+<header id="header"></header>
+<main>
+  <h1>Orders</h1>
+  <p class="subtitle">Lab06: REST POST /api/orders — захиалга үүсгэх, харах</p>
+
+  <div class="flow">
+    <span class="fn fn-client">Frontend</span>
+    <span class="fa">→</span>
+    <span class="fn fn-gateway">API Gateway</span>
+    <span class="fa">→</span>
+    <span class="fn fn-service">Order Service</span>
+    <span class="fa">→</span>
+    <span class="fn fn-soap">SOAP ValidateToken</span>
+    <span class="fa">→</span>
+    <span class="fn fn-service">PostgreSQL</span>
+  </div>
+
+  <div class="split">
+    <!-- Place Order -->
+    <div class="card">
+      <div class="card-title">Захиалга үүсгэх <span class="badge badge-rest">REST POST</span></div>
+
+      <div class="form-grid one">
+        <div class="field">
+          <label>Product ID *</label>
+          <input type="text" id="productId" placeholder="UUID — products хуудаснаас copy хийнэ">
+        </div>
+        <div class="field">
+          <label>Тоо ширхэг</label>
+          <input type="number" id="qty" value="1" min="1">
+        </div>
+        <div class="field">
+          <label>Хүргэлтийн хаяг *</label>
+          <textarea id="address" placeholder="Улаанбаатар, СБД, 1-р хороо..."></textarea>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="orderBtn" onclick="placeOrder()" style="margin-top:1rem">
+        <span id="orderSpin" class="spin" style="display:none"></span>
+        🛒 Place Order
+      </button>
+      <div id="order-alert" class="alert"></div>
+    </div>
+
+    <!-- My Orders -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div class="card-title" style="margin:0">Миний захиалгууд <span class="badge badge-rest">REST GET</span></div>
+        <button class="btn btn-outline" onclick="loadOrders()">↻</button>
+      </div>
+      <div id="orders-list">
+        <div class="empty"><div class="empty-icon">🛒</div><div>Load дарна уу</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/app.js"></script>
+<script>
+  renderHeader('orders');
+
+  // Pre-fill productId from URL params
+  window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('productId');
+    if (pid) document.getElementById('productId').value = pid;
+    if (getToken()) loadOrders();
+  };
+
+  async function placeOrder() {
+    if (!requireAuth()) return;
+
+    const productId = document.getElementById('productId').value.trim();
+    const qty       = parseInt(document.getElementById('qty').value);
+    const address   = document.getElementById('address').value.trim();
+
+    if (!productId || !address) {
+      return showAlert('order-alert', 'error', 'Product ID болон хаяг оруулна уу');
+    }
+
+    document.getElementById('orderSpin').style.display = 'inline-block';
+    document.getElementById('orderBtn').disabled = true;
+
+    try {
+      const { data, status, ok } = await apiPost('/api/orders', {
+        items: [{ productId, quantity: qty }],
+        shippingAddress: address
+      });
+
+      if (ok) {
+        showAlert('order-alert', 'success', `✅ Захиалга амжилттай! Нийт: $${data.totalAmount}`);
+        loadOrders();
+      } else if (status === 401 || status === 403) {
+        showAlert('order-alert', 'error', '❌ Нэвтрэх шаардлагатай');
+      } else {
+        showAlert('order-alert', 'error', `❌ Алдаа: ${JSON.stringify(data)}`);
+      }
+    } catch(e) {
+      showAlert('order-alert', 'error', e.message);
+    }
+
+    document.getElementById('orderSpin').style.display = 'none';
+    document.getElementById('orderBtn').disabled = false;
+  }
+
+  async function loadOrders() {
+    if (!getToken()) return;
+    try {
+      const { data } = await apiGet('/api/orders');
+      const list = document.getElementById('orders-list');
+
+      if (!data || data.length === 0) {
+        list.innerHTML = '<div class="empty"><div class="empty-icon">🛒</div><div>Захиалга байхгүй байна</div></div>';
+        return;
+      }
+
+      list.innerHTML = data.map(o => `
+        <div class="order-card">
+          <div>
+            <div class="order-id">#${o.id?.slice(0,8)}...</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">${o.items?.length || 0} бараа</div>
+          </div>
+          <div style="text-align:right">
+            <div class="order-amt">$${o.totalAmount}</div>
+            <div class="order-status">${o.status}</div>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      document.getElementById('orders-list').innerHTML =
+        `<div class="empty"><div>Алдаа: ${e.message}</div></div>`;
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAShop — Home</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.hero{text-align:center;padding:5rem 2rem 3rem}
+.hero h1{font-size:3.5rem;line-height:1.1;margin-bottom:1rem}
+.hero h1 span{color:var(--accent2);font-style:italic}
+.hero p{color:var(--muted);font-size:1rem;max-width:500px;margin:0 auto 2rem;line-height:1.7}
+.hero-btns{display:flex;gap:1rem;justify-content:center}
+.hero-btn{padding:.85rem 2rem;border-radius:12px;font-family:var(--font-body);font-size:.95rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s;border:none;display:inline-block}
+.hero-btn-primary{background:var(--accent);color:white}
+.hero-btn-primary:hover{background:#5a52e0;transform:translateY(-2px)}
+.hero-btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.hero-btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.arch{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:3rem 0}
+.arch-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;text-align:center;transition:all .2s}
+.arch-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+.arch-icon{font-size:2rem;margin-bottom:.7rem}
+.arch-name{font-family:var(--font-display);font-size:1rem;margin-bottom:.3rem}
+.arch-desc{font-size:.75rem;color:var(--muted);line-height:1.5}
+.arch-lab{margin-top:.5rem}
+.status-bar{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.5rem;display:flex;gap:2rem;justify-content:center;margin-bottom:3rem;flex-wrap:wrap}
+.status-item{display:flex;align-items:center;gap:.5rem;font-size:.8rem}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--success);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+<header id="header"></header>
+<main>
+  <div class="hero">
+    <h1>SOA E-Commerce<br><span>Microservices</span></h1>
+    <p>Lab06 + Lab07 + Lab08 — SOAP Auth, REST API, Redis Cache, DigitalOcean Spaces</p>
+    <div class="hero-btns">
+      <a href="register.html" class="hero-btn hero-btn-primary">🚀 Register</a>
+      <a href="products.html" class="hero-btn hero-btn-outline">📦 Browse Products</a>
+    </div>
+  </div>
+  <div class="status-bar">
+    <div class="status-item"><div class="status-dot"></div> SOAP Auth Service</div>
+    <div class="status-item"><div class="status-dot"></div> Product/Order Service</div>
+    <div class="status-item"><div class="status-dot"></div> File Manager Service</div>
+    <div class="status-item"><div class="status-dot"></div> API Gateway + Redis</div>
+    <div class="status-item"><div class="status-dot"></div> PostgreSQL DB</div>
+    <div class="status-item"><div class="status-dot"></div> DO Spaces</div>
+  </div>
+  <div class="arch">
+    <div class="arch-card"><div class="arch-icon">🔐</div><div class="arch-name">SOAP Auth</div><div class="arch-desc">RegisterUser, LoginUser, ValidateToken</div><div class="arch-lab"><span class="badge badge-soap">Lab06</span></div></div>
+    <div class="arch-card"><div class="arch-icon">📦</div><div class="arch-name">REST Service</div><div class="arch-desc">Product CRUD, Order management</div><div class="arch-lab"><span class="badge badge-rest">Lab06</span></div></div>
+    <div class="arch-card"><div class="arch-icon">🖼️</div><div class="arch-name">File Manager</div><div class="arch-desc">DigitalOcean Spaces upload</div><div class="arch-lab"><span class="badge badge-rest">Lab07</span></div></div>
+    <div class="arch-card"><div class="arch-icon">⚡</div><div class="arch-name">API Gateway</div><div class="arch-desc">Redis Cache, Routing, VPC</div><div class="arch-lab"><span class="badge badge-cache">Lab08</span></div></div>
+  </div>
+</main>
+<script src="js/app.js"></script>
+<script>renderHeader('home');</script>
+</body>
+</html>

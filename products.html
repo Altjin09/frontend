@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAShop — Products</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header id="header"></header>
+<main>
+  <h1>Products</h1>
+  <p class="subtitle">Lab06: REST GET /api/products | Lab08: Redis Cache Hit/Miss</p>
+
+  <div class="flow">
+    <span class="fn fn-client">Frontend</span>
+    <span class="fa">→</span>
+    <span class="fn fn-gateway">API Gateway (Lab08)</span>
+    <span class="fa">→</span>
+    <span class="fn fn-service">Redis Cache?</span>
+    <span class="fa">→</span>
+    <span class="fn fn-service">Product Service</span>
+    <span class="fa">→</span>
+    <span class="fn fn-soap">SOAP ValidateToken</span>
+  </div>
+
+  <div class="card">
+    <div class="cache-bar">
+      <div class="card-title" style="margin:0">Бараанууд <span class="badge badge-rest">REST GET</span></div>
+      <div style="display:flex;gap:0.75rem;align-items:center">
+        <div class="cache-pill">
+          <div class="cdot" id="cdot"></div>
+          <span id="cache-label">—</span>
+        </div>
+        <button class="btn btn-outline" onclick="loadProducts()">↻ Refresh</button>
+        <a href="add-product.html" class="btn btn-primary" style="margin-top:0;text-decoration:none">+ Add</a>
+      </div>
+    </div>
+
+    <div id="products-container">
+      <div class="empty">
+        <div class="empty-icon">📦</div>
+        <div>Ачааллаж байна...</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/app.js"></script>
+<script>
+  renderHeader('products');
+
+  async function loadProducts() {
+    try {
+      const { data, cache } = await apiGet('/api/products');
+
+      // Cache indicator
+      const dot = document.getElementById('cdot');
+      const label = document.getElementById('cache-label');
+      if (cache === 'HIT') {
+        dot.className = 'cdot hit';
+        label.textContent = '⚡ CACHE HIT (Lab08)';
+      } else {
+        dot.className = 'cdot miss';
+        label.textContent = '🔄 CACHE MISS';
+      }
+
+      const container = document.getElementById('products-container');
+
+      if (!data || data.length === 0) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div>Бараа байхгүй байна.<br>SELLER эрхтэйгээр нэвтрэн бараа нэмнэ үү.</div></div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="product-grid">
+        ${data.map(p => `
+          <div class="prod-card" onclick="selectProduct('${p.id}')">
+            ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" onerror="this.style.display='none'">` : ''}
+            <div class="prod-name">${p.name}</div>
+            <div class="prod-price">$${p.price}</div>
+            <div class="prod-meta">
+              <span>${p.category || '—'}</span>
+              <span>Stock: ${p.stock}</span>
+            </div>
+            <div class="prod-id">ID: ${p.id}</div>
+            <button class="btn btn-outline" style="margin-top:0.6rem;padding:0.4rem 0.8rem;font-size:0.75rem;width:100%" 
+              onclick="event.stopPropagation(); orderProduct('${p.id}')">🛒 Order</button>
+          </div>`).join('')}
+      </div>`;
+    } catch(e) {
+      document.getElementById('products-container').innerHTML =
+        `<div class="empty"><div class="empty-icon">⚠️</div><div>Gateway-д холбогдож чадсангүй:<br>${e.message}</div></div>`;
+    }
+  }
+
+  function selectProduct(id) {
+    navigator.clipboard.writeText(id).catch(() => {});
+    alert('Product ID copied:\n' + id);
+  }
+
+  function orderProduct(productId) {
+    window.location.href = `orders.html?productId=${productId}`;
+  }
+
+  loadProducts();
+</script>
+</body>
+</html>

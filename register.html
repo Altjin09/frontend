@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOAShop — Register</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .auth-wrap { max-width: 480px; margin: 4rem auto; }
+  .auth-wrap h1 { font-size: 2rem; }
+</style>
+</head>
+<body>
+<header id="header"></header>
+<main>
+  <div class="auth-wrap">
+    <h1>Register</h1>
+    <p class="subtitle">SOAP RegisterUser операц — Lab06</p>
+
+    <div class="flow">
+      <span class="fn fn-client">Frontend</span>
+      <span class="fa">→</span>
+      <span class="fn fn-soap">SOAP Auth Service</span>
+      <span class="fa">→</span>
+      <span class="fn fn-service">PostgreSQL (auth-db)</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Шинэ бүртгэл <span class="badge badge-soap">SOAP</span></div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="seller1">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="seller@test.com">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="••••••">
+        </div>
+        <div class="field">
+          <label>Role</label>
+          <select id="role">
+            <option value="CUSTOMER">CUSTOMER</option>
+            <option value="SELLER" selected>SELLER</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="regBtn" onclick="doRegister()">
+        <span id="regSpin" class="spin" style="display:none"></span>
+        Register
+      </button>
+      <div id="reg-alert" class="alert"></div>
+
+      <div class="divider">эсвэл</div>
+      <div style="text-align:center">
+        <a href="login.html" style="color:var(--accent);font-size:0.85rem">Аль хэдийн бүртгэлтэй? Login →</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/app.js"></script>
+<script>
+  renderHeader('');
+
+  async function doRegister() {
+    const username = document.getElementById('username').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const role     = document.getElementById('role').value;
+
+    if (!username || !email || !password) {
+      return showAlert('reg-alert', 'error', 'Бүх талбарыг бөглөнө үү');
+    }
+
+    document.getElementById('regSpin').style.display = 'inline-block';
+    document.getElementById('regBtn').disabled = true;
+
+    try {
+      const xml = await soapCall(`
+        <auth:RegisterUserRequest>
+          <auth:username>${username}</auth:username>
+          <auth:password>${password}</auth:password>
+          <auth:email>${email}</auth:email>
+          <auth:role>${role}</auth:role>
+        </auth:RegisterUserRequest>`);
+
+      const success = extractXml(xml, 'success');
+      const message = extractXml(xml, 'message');
+
+      if (success === 'true') {
+        showAlert('reg-alert', 'success', '✅ Бүртгэл амжилттай! Login хуудас руу шилжиж байна...');
+        setTimeout(() => window.location.href = 'login.html', 2000);
+      } else {
+        showAlert('reg-alert', 'error', '❌ ' + message);
+      }
+    } catch(e) {
+      showAlert('reg-alert', 'error', 'SOAP Error: ' + e.message);
+    }
+
+    document.getElementById('regSpin').style.display = 'none';
+    document.getElementById('regBtn').disabled = false;
+  }
+</script>
+</body>
+</html>
