@@ -1,7 +1,6 @@
 // ============ CONFIG ============
-const GATEWAY = 'https://api-gateway-ot9qp.ondigitalocean.app';
+const GATEWAY = 'https://product-order-service-22ayo.ondigitalocean.app';
 const SOAP_URL = 'https://soap-auth-service-87mrv.ondigitalocean.app/ws';
-
 // ============ AUTH HELPERS ============
 function getToken()    { return localStorage.getItem('soa_token') || ''; }
 function getUser()     { return localStorage.getItem('soa_user') || ''; }
