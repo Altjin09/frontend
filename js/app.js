@@ -67,14 +67,19 @@ function showAlert(id, type, msg) {
 
 // ============ SOAP ============
 async function soapCall(body) {
-  const xml = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:auth="http://ecommerce.com/auth">
-    <soapenv:Header/>
-    <soapenv:Body>${body}</soapenv:Body>
-  </soapenv:Envelope>`;
+  const xml = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+               xmlns:auth="http://ecommerce.com/auth">
+  <soap:Header/>
+  <soap:Body>${body}</soap:Body>
+</soap:Envelope>`;
 
   const res = await fetch(SOAP_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/xml', 'SOAPAction': '' },
+    headers: { 
+      'Content-Type': 'text/xml; charset=utf-8',
+      'SOAPAction': '""'
+    },
     body: xml
   });
   return await res.text();
