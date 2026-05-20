@@ -1,4 +1,4 @@
-const GATEWAY = '';
+const GATEWAY = 'https://api-gateway-ot9qp.ondigitalocean.app/';
 
 // Auth helpers
 function getToken() { return localStorage.getItem('token'); }
