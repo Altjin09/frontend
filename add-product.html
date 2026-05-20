@@ -5,35 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOAShop — Add Product</title>
 <link rel="stylesheet" href="css/style.css">
-<style>
-  .wrap { max-width: 600px; margin: 0 auto; }
-</style>
 </head>
 <body>
 <header id="header"></header>
 <main>
-  <div class="wrap">
+  <div style="max-width:600px;margin:0 auto">
     <h1>Add Product</h1>
-    <p class="subtitle">Lab06: REST POST /api/products — SOAP middleware шалгана</p>
-
-    <div class="flow">
-      <span class="fn fn-client">Frontend</span>
-      <span class="fa">→</span>
-      <span class="fn fn-gateway">Gateway</span>
-      <span class="fa">→</span>
-      <span class="fn fn-service">Product Service</span>
-      <span class="fa">→</span>
-      <span class="fn fn-soap">SOAP ValidateToken</span>
-      <span class="fa">→</span>
-      <span class="fn fn-service">PostgreSQL</span>
-    </div>
-
     <div class="card">
-      <div class="card-title">Шинэ бараа <span class="badge badge-rest">REST POST</span></div>
-
+      <div class="card-header">
+        <span class="card-title">Шинэ бараа</span>
+        <span class="badge badge-rest">REST POST</span>
+      </div>
       <div class="form-grid">
         <div class="field">
-          <label>Бараанд нэр *</label>
+          <label>Нэр *</label>
           <input type="text" id="name" placeholder="MacBook Pro">
         </div>
         <div class="field">
@@ -46,59 +31,87 @@
         </div>
         <div class="field">
           <label>Нөөц</label>
-          <input type="number" id="stock" placeholder="10" value="10">
+          <input type="number" id="stock" value="10">
         </div>
         <div class="field full">
           <label>Тайлбар</label>
-          <textarea id="description" placeholder="Барааны дэлгэрэнгүй тайлбар..."></textarea>
+          <textarea id="description" placeholder="Барааны тайлбар..."></textarea>
         </div>
         <div class="field full">
-          <label>Зургийн URL (DO Spaces)</label>
-          <input type="text" id="imageUrl" placeholder="https://ecommerce-products.sgp1.digitaloceanspaces.com/...">
-          <small style="color:var(--muted);font-size:0.7rem;margin-top:0.2rem">Upload хэсэгт зураг upload хийгаад URL-г энд оруулна</small>
+          <label>Зураг</label>
+          <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+            <div id="uploadPlaceholder">
+              <div style="font-size:1.5rem;margin-bottom:0.4rem">+</div>
+              <div class="upload-text">Зураг сонгох (PNG, JPG — max 10MB)</div>
+            </div>
+            <img id="previewImg" class="preview-img" alt="preview">
+          </div>
+          <div id="upload-status" class="alert"></div>
+          <input type="text" id="imageUrl" placeholder="https://... (автоматаар орно)" style="margin-top:0.5rem">
         </div>
       </div>
-
-      <div style="display:flex;gap:1rem;margin-top:1.2rem">
+      <div style="display:flex;gap:0.75rem;margin-top:1.25rem">
         <button class="btn btn-primary" id="addBtn" onclick="addProduct()" style="margin-top:0">
           <span id="addSpin" class="spin" style="display:none"></span>
           Add Product
         </button>
-        <a href="files.html" class="btn btn-outline" style="margin-top:0;text-decoration:none">🖼️ Upload Image</a>
-        <a href="products.html" class="btn btn-outline" style="margin-top:0;text-decoration:none">← Back</a>
+        <a href="products.html" class="btn btn-outline" style="margin-top:0;text-decoration:none">Back</a>
       </div>
-
       <div id="add-alert" class="alert"></div>
     </div>
   </div>
 </main>
-
 <script src="js/app.js"></script>
 <script>
-  renderHeader('add-product');
+  renderHeader('products');
 
-  // Pre-fill image URL from localStorage if coming from upload
-  window.onload = () => {
-    const url = localStorage.getItem('last_upload_url');
-    if (url) {
-      document.getElementById('imageUrl').value = url;
-      localStorage.removeItem('last_upload_url');
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    // Preview
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = document.getElementById('previewImg');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      document.getElementById('uploadPlaceholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+    // Auto-upload
+    uploadImage(file);
+  }
+
+  async function uploadImage(file) {
+    if (!getToken()) return;
+    showAlert('upload-status', 'success', 'Зураг upload хийж байна...');
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(`${GATEWAY}/api/files/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('imageUrl').value = data.url;
+        showAlert('upload-status', 'success', 'Зураг амжилттай upload хийгдлээ');
+      } else {
+        showAlert('upload-status', 'error', 'Upload амжилтгүй: ' + res.status);
+      }
+    } catch(e) {
+      showAlert('upload-status', 'error', 'Upload error: ' + e.message);
     }
-  };
+  }
 
   async function addProduct() {
     if (!requireAuth()) return;
-
     const name  = document.getElementById('name').value.trim();
     const price = parseFloat(document.getElementById('price').value);
-
-    if (!name || !price) {
-      return showAlert('add-alert', 'error', 'Нэр болон үнэ заавал оруулна уу');
-    }
-
+    if (!name || !price) return showAlert('add-alert', 'error', 'Нэр болон үнэ заавал оруулна уу');
     document.getElementById('addSpin').style.display = 'inline-block';
     document.getElementById('addBtn').disabled = true;
-
     try {
       const { data, status, ok } = await apiPost('/api/products', {
         name,
@@ -108,19 +121,17 @@
         description: document.getElementById('description').value.trim(),
         imageUrl:    document.getElementById('imageUrl').value.trim() || null
       });
-
       if (ok) {
-        showAlert('add-alert', 'success', `✅ Бараа нэмэгдлээ! ID: ${data.id}`);
+        showAlert('add-alert', 'success', `Бараа нэмэгдлээ! ID: ${data.id}`);
         setTimeout(() => window.location.href = 'products.html', 1500);
       } else if (status === 401 || status === 403) {
-        showAlert('add-alert', 'error', '❌ Эрх хүрэхгүй байна. SELLER эрхтэйгээр нэвтрэнэ үү.');
+        showAlert('add-alert', 'error', 'Эрх хүрэхгүй байна. SELLER эрхтэйгээр нэвтрэнэ үү.');
       } else {
-        showAlert('add-alert', 'error', `❌ Алдаа: ${status}`);
+        showAlert('add-alert', 'error', `Алдаа: ${status}`);
       }
     } catch(e) {
       showAlert('add-alert', 'error', 'Gateway error: ' + e.message);
     }
-
     document.getElementById('addSpin').style.display = 'none';
     document.getElementById('addBtn').disabled = false;
   }
